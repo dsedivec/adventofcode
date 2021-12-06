@@ -22,5 +22,43 @@
           epsilon
           (* gamma epsilon)])))))
 
+(defn part02
+  ([nums cmp-type]
+   (part02 nums
+           cmp-type
+           (bit-shift-left 1 (dec (long (Math/ceil (/ (Math/log (apply max nums))
+                                                      (Math/log 2))))))))
+  ([nums cmp-type bit]
+   (assert (>= bit 1) (format "nums=%s bit=%s" nums bit))
+   (println (format "num nums %d bit=%s" (count nums) bit))
+   (when (<= (count nums) 8) (println (format "nums=%s" nums)))
+   (let [filtered-nums (loop [nums nums
+                              zeroes []
+                              ones []]
+                         (if (seq nums)
+                           (let [num (first nums)
+                                 is-one (bit-and num bit)]
+                             (if (zero? is-one)
+                               (recur (next nums) (conj zeroes num) ones)
+                               (recur (next nums) zeroes (conj ones num))))
+                           (let [cmp ((case cmp-type :oxygen + -)
+                                      (compare (count zeroes) (count ones)))]
+                             (println (format "%s cmp=%s len zeroes=%d ones=%d"
+                                              cmp-type cmp
+                                              (count zeroes) (count ones)))
+                             (if (zero? cmp)
+                               (case cmp-type
+                                 :oxygen ones
+                                 zeroes)
+                               (if (pos? cmp) zeroes ones)))))]
+     (if (= (count filtered-nums) 1)
+       (first filtered-nums)
+       (recur filtered-nums cmp-type (bit-shift-right bit 1))))))
+
 (defn -main [file-name]
-  (prn "Part 1: " (part01 (line-seq (io/reader file-name)))))
+  (let [lines (line-seq (io/reader file-name))
+        numbers (map #(Integer/parseInt % 2) lines)]
+    (println "Part 1: " (part01 lines))
+    (let [oxygen (part02 numbers :oxygen)
+          co2 (part02 numbers :co2)]
+      (println "Part 2: " oxygen co2 (* oxygen co2)))))
